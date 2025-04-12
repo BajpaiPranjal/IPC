@@ -1,0 +1,2 @@
+killall -9 server
+killall -9 client
