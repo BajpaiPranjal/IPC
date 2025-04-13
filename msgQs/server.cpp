@@ -41,14 +41,16 @@ int main(int argc, char const *argv[])
         return -1;
     }
 
-    string msg = "Hello";
+    string msg = "Hello ";
 
     int counter = 10;
 
     while (counter-- > 0)
     {
 
-        int res = mq_send(mq, msg.c_str(), msg.size() + 1, 0);
+        string payload = msg + to_string(counter);
+
+        int res = mq_send(mq, payload.c_str(), payload.size() + 1, 0);
 
         if (res == -1)
         {
@@ -56,16 +58,16 @@ int main(int argc, char const *argv[])
             return -1;
         }
 
-        // this_thread::sleep_for(chrono::milliseconds(500));
+        this_thread::sleep_for(chrono::milliseconds(1000));
     }
 
     ct << "message sent...press any key to close" << el;
 
-    // getchar();
+    getchar();
 
     mq_close(mq);
 
-    // mq_unlink(qName.c_str());
+    mq_unlink(qName.c_str());
     //unlink should be done by server
 
     return 0;

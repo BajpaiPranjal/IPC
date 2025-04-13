@@ -1,59 +1,79 @@
 #include <mqueue.h>
-#include <csignal>
+#include <fcntl.h>     // O_CREAT, O_RDONLY
+#include <sys/stat.h>  // mode constants
 #include <iostream>
-
+#include <cstring>
+#include <cstdlib>
+#include <csignal>
+#include <thread>
 using namespace std;
 
-mqd_t mqd;
+#define ct cout
+#define el endl
 
-void handler(int sig) {
-    char buf[1024];
-    ssize_t bytes = mq_receive(mqd, buf, sizeof(buf), nullptr);
-    if (bytes >= 0) {
-        cout << "Got message: " << buf << endl;
-    } else {
-        perror("mq_receive");
+const char *qName = "/myQueue";
+const int BUF_SIZE = 1024;
+
+// Notification handler
+void messageHandler(union sigval sv)
+{
+    mqd_t mq = *((mqd_t *)sv.sival_ptr);
+    char buffer[BUF_SIZE];
+
+    int bytes = mq_receive(mq, buffer, sizeof(buffer), nullptr);
+    if (bytes >= 0)
+    {
+        ct << "Notification received! Message: " << buffer << el;
+    }
+    else
+    {
+        perror("mq_receive failed");
     }
 
-    // Re-arm the notification!
+    // Re-register for future notifications
     struct sigevent sev;
-    sev.sigev_notify = SIGEV_SIGNAL;
-    sev.sigev_signo = SIGUSR1;
+    sev.sigev_notify = SIGEV_THREAD;
+    sev.sigev_notify_function = messageHandler;
+    sev.sigev_notify_attributes = nullptr;
+    sev.sigev_value.sival_ptr = sv.sival_ptr;
 
-    if (mq_notify(mqd, &sev) == -1) {
-        perror("mq_notify");
+    if (mq_notify(mq, &sev) == -1)
+    {
+        perror("mq_notify (re-register) failed");
     }
 }
 
-int main() {
-    string qName = "/myQueue";
-
-    mqd = mq_open(qName.c_str(), O_RDONLY | O_NONBLOCK);
-    if (mqd == -1) {
-        perror("mq_open");
-        return 1;
+int main()
+{
+    // Open the message queue
+    mqd_t mq = mq_open(qName, O_RDONLY | O_NONBLOCK);
+    if (mq == -1)
+    {
+        perror("mq_open failed");
+        return -1;
     }
-
-    // Setup signal handler
-    signal(SIGUSR1, handler);
 
     // Register for notification
     struct sigevent sev;
-    sev.sigev_notify = SIGEV_SIGNAL;
-    sev.sigev_signo = SIGUSR1;
+    sev.sigev_notify = SIGEV_THREAD;
+    sev.sigev_notify_function = messageHandler;
+    sev.sigev_notify_attributes = nullptr;
+    sev.sigev_value.sival_ptr = &mq;
 
-    if (mq_notify(mqd, &sev) == -1) {
-        perror("mq_notify");
-        return 1;
+    if (mq_notify(mq, &sev) == -1)
+    {
+        perror("mq_notify failed");
+        return -1;
     }
 
-    cout << "Waiting for messages..." << endl;
+    ct << "Waiting for message..." << el;
 
-    // Wait forever (or use pause/sleep/loop)
-    while (true) {
-        pause(); // Wait for signal
+    // Keep main thread alive
+    while (true)
+    {
+        this_thread::sleep_for(chrono::seconds(1));
     }
 
-    mq_close(mqd);
+    mq_close(mq);
     return 0;
 }
