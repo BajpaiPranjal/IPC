@@ -45,6 +45,10 @@ int main(int argc, char const *argv[])
 
     int counter = 10;
 
+    ct<<"server idle..."<<el;
+    this_thread::sleep_for(chrono::milliseconds(5000));
+    ct<<"Server started "<<el;
+
     while (counter-- > 0)
     {
 
