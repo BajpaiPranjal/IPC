@@ -3,7 +3,7 @@
 #include <cstring>
 #include <unistd.h>
 #include <thread>
-
+#include <mutex>
 #include <iostream>
 
 using namespace std;
@@ -26,7 +26,7 @@ int main(int argc, char const *argv[])
 
     const char *mName = "/my_shm";
 
-    const int SIZE = 2000*2000;
+    const int SIZE = 4;
 
     int fd = shm_open(mName, O_CREAT | O_RDWR, 0666);
 
@@ -41,7 +41,9 @@ int main(int argc, char const *argv[])
         return -1;
     }
 
-    void *ptr = mmap(nullptr, SIZE, PROT_WRITE, MAP_SHARED, fd, 0);
+    int *ptr = (int*) mmap(nullptr, SIZE, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
+
+    *ptr = 1;
 
     if(ptr == MAP_FAILED){
         perror("mmap failed");
@@ -57,24 +59,53 @@ int main(int argc, char const *argv[])
 
     ct<<"msg ready"<<el;
 
-
-    int num = 0;
-
-    while (num++ < 100)
+    ct<<"server waiting..."<<el;
+    // sleep(5);
+    
+    int counter = 0;
+    
+    int value = 0;
+    
+    mutex m;
+    
+    
+    
+    ct<<"server started "<<el;
+    
+    while (counter < 100)
     {
 
-        // string payload = msg + to_string(num);
+        m.lock();
+        value = *ptr;
 
-        memcpy(ptr, msg, SIZE);
 
-        ct << "payload dropped, msg[1] =  " << msg[1] << el;
+        
+        if(value == 0){
+            ct<<"value read = "<<value<<el;
+            
+            ++value;
+    
+            *ptr = value;
+    
+            ct<<"value put = "<<*ptr<<el;
 
-        this_thread::sleep_for(chrono::milliseconds(50));
+            counter++;
+        }
+
+
+        m.unlock();
+
+        // this_thread::sleep_for(chrono::milliseconds(5));
     }
 
+    
     ct << "press any key to stop..." << el;
-
+    
     getchar();
+    
+    
+    ct<<"Final value = "<<*ptr<<el;
+    
     munmap(ptr, SIZE);
 
     close(fd);

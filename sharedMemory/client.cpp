@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <string>
 #include <thread>
-
+#include <mutex>
 #include <iostream>
 #include <string.h>
 
@@ -17,9 +17,9 @@ int main(int argc, char const *argv[])
 
     const char *pName = "/my_shm";
 
-    const int SIZE = 2000*2000;
+    const int SIZE = 4;
 
-    int fd = shm_open(pName, O_RDONLY, 0666);
+    int fd = shm_open(pName, O_RDWR, 0666);
 
     if (fd == -1)
     {
@@ -27,7 +27,7 @@ int main(int argc, char const *argv[])
         return -1;
     }
 
-    void *ptr = mmap(nullptr, SIZE, PROT_READ, MAP_SHARED, fd, 0);
+    int* ptr = (int*) mmap(nullptr, SIZE, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
 
     char buffer[SIZE];
 
@@ -39,15 +39,36 @@ int main(int argc, char const *argv[])
 
     int counter = 0;
 
-    while (counter++ < 100)
+    int value = 0;
+    
+    mutex m;
+
+    
+
+    while (counter < 100)
     {
 
-        memcpy(buffer, ptr, SIZE);
+        m.lock();
 
-        ct << buffer[1] << el;
+        value = *ptr;   
 
+        ct<<"value read = "<<value<<el;
+        
+
+        if(value == 1){
+
+            --value;
+    
+            *ptr = value;
+    
+            ct<<"value put = "<<*ptr<<el;
+            counter++;
+        }
+
+        m.unlock();
         this_thread::sleep_for(chrono::milliseconds(5));
     }
+
 
     munmap(ptr, SIZE);
 
