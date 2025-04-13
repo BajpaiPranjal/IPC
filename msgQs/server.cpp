@@ -61,11 +61,12 @@ int main(int argc, char const *argv[])
 
     ct << "message sent...press any key to close" << el;
 
-    getchar();
+    // getchar();
 
     mq_close(mq);
 
-    mq_unlink(qName.c_str());
+    // mq_unlink(qName.c_str());
+    //unlink should be done by server
 
     return 0;
 }
