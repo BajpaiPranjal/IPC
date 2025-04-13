@@ -75,7 +75,6 @@ int main(int argc, char const *argv[])
     ct << "press any key to stop..." << el;
 
     getchar();
-
     munmap(ptr, SIZE);
 
     close(fd);

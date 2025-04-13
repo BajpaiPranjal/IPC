@@ -13,7 +13,6 @@ using namespace std;
 #define el endl
 
 const char *qName = "/myQueue";
-const int BUF_SIZE = 1024;
 
 mqd_t mq;  // global to access in signal handler
 
@@ -45,7 +44,9 @@ void signalHandler(int sig)
 }
 
 void register_notification()
-{
+{   
+    //binding mq_notify() to SIRUSR1
+    
     struct sigevent sev{};
     sev.sigev_notify = SIGEV_SIGNAL;
     sev.sigev_signo = SIGUSR1;
@@ -71,10 +72,10 @@ int main()
     }
 
     // Install signal handler
+
+    //binding SIGUSR1 to signalHandlre
     struct sigaction sa{};
     sa.sa_handler = signalHandler;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = 0;
 
     if (sigaction(SIGUSR1, &sa, nullptr) == -1)
     {
@@ -83,7 +84,13 @@ int main()
     }
 
     // Drain any existing messages before registering notification
-    char dummy[BUF_SIZE];
+    mq_attr att;
+
+    mq_getattr(mq,&att);
+
+    // char buffer[att.mq_msgsize];
+
+    char dummy[att.mq_msgsize];
     while (mq_receive(mq, dummy, sizeof(dummy), nullptr) != -1)
     {
         ct << "Drained old message: " << dummy << el;
@@ -102,3 +109,9 @@ int main()
     mq_close(mq);
     return 0;
 }
+
+
+/*
+
+mq_notify() only sends a signal when the queue transitions from empty → non-empty.
+*/
