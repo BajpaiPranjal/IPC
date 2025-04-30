@@ -1,0 +1,76 @@
+🎛️ What else can cmsg_level and cmsg_type be?
+🔸 cmsg_level values:
+
+Value	Meaning
+SOL_SOCKET	Message is for the socket layer (FDs, credentials, timestamps)
+IPPROTO_IP, IPPROTO_TCP	If you're using IP sockets, allows TCP/IP control options
+🔸 Common cmsg_type (when cmsg_level == SOL_SOCKET):
+
+Value	                    Meaning
+SCM_RIGHTS	                Pass open file descriptors
+SCM_CREDENTIALS	            Pass UID/GID/PID of the sender
+SCM_TIMESTAMP	            Timestamp when the kernel received the message
+SCM_TIMESTAMPNS	            High-resolution timestamp (nanoseconds)
+
+
+
+Macro	                            Purpose
+CMSG_SPACE(len)	                    Allocates enough space for both cmsghdr + data (e.g., FD)
+CMSG_LEN(len)	                    Computes the actual length of control message with just the payload
+CMSG_FIRSTHDR(msg)	                Returns a pointer to the first control message in msghdr
+CMSG_DATA(cmsg)	                    Returns a pointer to the data payload (e.g., FD) inside the cmsghdr
+
+
+always set msg_control and msg_controllen before 
+calling any CMSG_* macro that uses them (CMSG_FIRSTHDR, CMSG_NXTHDR, etc).
+
+
+
+In Linux sockets, iovec is a structure used for vectored I/O, allowing you to send or receive data across multiple buffers 
+in a single system call. It essentially provides a way to group different buffers and their lengths into a single argument 
+for read/write operations. This can be more efficient than repeatedly calling read or write with individual buffers. 
+
+
+struct iovec iov[2];
+
+char header[] = "Hello, ";
+char body[] = "World!\n";
+
+iov[0].iov_base = header;
+iov[0].iov_len = strlen(header);
+iov[1].iov_base = body;
+iov[1].iov_len = strlen(body);
+
+// Write both parts in one syscall
+writev(STDOUT_FILENO, iov, 2);
+
+
+
+
+Why is fd_sent = 5, but fd_received = 4?
+
+
+✅ What's really happening
+When the server opens the file, it gets fd = 5 (in its own FD table).
+
+It sends the underlying kernel file reference (called a file description or struct file in the kernel).
+
+The client receives a new FD, say 4, which refers to the same open file — but in the client's FD table.
+
+Think of it like this:
+
+text
+Copy
+Edit
+Process A (Server)                  Process B (Client)
+------------------                 ------------------
+fd 5  --> /etc/hostname            fd 4  --> /etc/hostname
+         (open file)                        (same open file)
+So:
+
+The numeric value of the FD is irrelevant.
+
+What matters is that both point to the same underlying file object in the kernel.
+
+🧠 Analogy: "Sending a reference to a shared object"
+Think of an FD as a local handle, like a pointer. You're sending the reference to the object, not its local variable name.
