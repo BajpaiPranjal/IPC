@@ -1,3 +1,6 @@
+// Build it with the following command: 
+//  g++ -std=c++20 semaphore.cpp -pthread -o semaphore
+
 #include <iostream>
 #include <thread>
 #include <semaphore>
