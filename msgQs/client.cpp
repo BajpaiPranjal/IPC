@@ -57,7 +57,7 @@ int main(int argc, char const *argv[])
 
     mq_close(mQ);
 
-    mq_unlink(qName.c_str());
+    // mq_unlink(qName.c_str());
 
     return 0;
 }

@@ -1,4 +1,5 @@
-/*A message queue is a kernel-managed data structure that allows processes to exchange structured messages asynchronously.
+/*A message queue is a kernel-managed data structure that allows processes to exchange structured messages
+asynchronously.
 Think of it like a mailbox where one process drops messages and another one picks them up.
 
 Asynchronous communication
@@ -45,9 +46,9 @@ int main(int argc, char const *argv[])
 
     int counter = 10;
 
-    ct<<"server idle..."<<el;
+    ct << "server idle..." << el;
     // this_thread::sleep_for(chrono::milliseconds(5000));
-    ct<<"Server started "<<el;
+    ct << "Server started " << el;
 
     while (counter-- > 0)
     {
@@ -72,7 +73,7 @@ int main(int argc, char const *argv[])
     mq_close(mq);
 
     mq_unlink(qName.c_str());
-    //unlink should be done by server
+    // unlink should be done by server
 
     return 0;
 }

@@ -1,4 +1,4 @@
-// Build it with the following command: 
+// Build it with the following command:
 //  g++ -std=c++20 semaphore.cpp -pthread -o semaphore
 
 #include <iostream>
@@ -9,20 +9,22 @@
 using namespace std;
 
 #define ct cout
-#define el  endl
+#define el endl
 
 #define MAX 10000
 
-int val= 0;
+int val = 0;
 
-int upCnt = 0, dwnCnt  = 0;
+int upCnt = 0, dwnCnt = 0;
 
 counting_semaphore<1> inc(1);
-counting_semaphore<1> decsmp(0); 
+counting_semaphore<1> decsmp(0);
 
-void increse(){
-    
-    while(upCnt < MAX){
+void increse()
+{
+
+    while (upCnt < MAX)
+    {
         inc.acquire();
         val++;
         // ct<<"val incremented = "<<val<<el;
@@ -31,45 +33,45 @@ void increse(){
     }
 }
 
-void descrease(){
-    while(dwnCnt < MAX){
+void descrease()
+{
+    while (dwnCnt < MAX)
+    {
         decsmp.acquire();
         val--;
         // ct<<"val decerased = "<<val<<el;
         dwnCnt++;
         inc.release();
-    }    
+    }
 }
-
-
 
 void makeThreadAndRunCode()
 {
     thread t1(increse);
-    
-    
+
     thread t2(descrease);
-    
-    t1.join();    
+
+    t1.join();
     t2.join();
 }
+
 int main()
 {
-    ct<<"Hii"<<el;
-    
-    
+    ct << "Hii" << el;
+
     int tc = 0;
-    
+
     auto start = chrono::system_clock::now();
-    
-    while(tc++ < 5){
+
+    while (tc++ < 5)
+    {
         makeThreadAndRunCode();
-        ct<<"tc = "<<tc<<" final val = "<<val<<el;
+        ct << "tc = " << tc << " final val = " << val << el;
     }
-    
+
     chrono::duration<double> dur = chrono::system_clock::now() - start;
-    
-    ct<<"time taken = "<<dur.count()<<el;
+
+    ct << "time taken = " << dur.count() << el;
     // ct<<"final val = "<<val<<el;
     return 0;
 }

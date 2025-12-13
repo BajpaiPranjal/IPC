@@ -20,8 +20,6 @@ int main()
 
 	char path[] = "/tmp/Pranjal";
 
-	
-
 	if (mkfifo(path, 0666) == -1)
 	{
 		ct << "failed to create name pipe" << el;
